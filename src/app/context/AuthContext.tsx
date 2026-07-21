@@ -30,7 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session: s }, error }) => {
       if (error) console.error('[Auth] getSession error:', error.message);
       setSession(s);
-        console.log('now what3??' , s);
+        console.log('session is' , s);
+        console.log('user is' , s.user);
 
       setLoading(false);
       // Sync profile on page-reload if a session is already present.
@@ -46,9 +47,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('[Auth] event:', event);
       setSession(s);
       // SIGNED_IN fires on the first OAuth callback after the Google redirect.
-        console.log('now what??' , s);
+        console.log('session is' , s);
+        console.log('user is' , s.user);
+        console.log('event is' , event);
         if (event === 'SIGNED_IN' && s?.user) {
-          console.log('now what2??' , s.user);
         usersService.syncProfile(s.user);
       }
     });
