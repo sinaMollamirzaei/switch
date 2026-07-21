@@ -30,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session: s }, error }) => {
       if (error) console.error('[Auth] getSession error:', error.message);
       setSession(s);
+        console.log('now what3??' , s);
+
       setLoading(false);
       // Sync profile on page-reload if a session is already present.
       // onAuthStateChange fires INITIAL_SESSION (not SIGNED_IN) on reload,
