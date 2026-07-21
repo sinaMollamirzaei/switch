@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { Dashboard } from './components/Dashboard';
 import { AddService } from './components/AddService';
 import { CarManagement } from './components/CarManagement';
-import { EducationInsights } from './components/EducationInsights';
 import { SplashScreen } from './components/SplashScreen';
 import { PhoneLogin } from './components/PhoneLogin';
 import { LayoutDashboard, Plus, Car, Lightbulb } from 'lucide-react';
@@ -136,7 +135,6 @@ const AppContent: React.FC = () => {
                 transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
                 className="h-full"
               >
-                <EducationInsights />
               </motion.div>
             )}
           </AnimatePresence>

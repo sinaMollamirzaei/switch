@@ -52,8 +52,8 @@ export const inspectionHistoriesService = {
 
   async update(id: string, record: Partial<Omit<InspectionHistory, 'id' | 'carId' | 'createdAt'>>): Promise<void> {
     const payload: Record<string, unknown> = {};
-    if (record.fromDate !== undefined) payload.start_date = record.fromDate;
-    if (record.toDate !== undefined) payload.end_date = record.toDate;
+    if (record.fromDate !== undefined) payload.from_date = record.fromDate;
+    if (record.toDate !== undefined) payload.to_date = record.toDate;
 
     if (Object.keys(payload).length === 0) return;
     const { error } = await supabase.from('inspection_histories').update(payload).eq('id', id);

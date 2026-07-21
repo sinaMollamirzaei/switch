@@ -5,16 +5,16 @@ import { Calendar, Pencil } from 'lucide-react';
 
 interface ValiditySectionProps {
   title: string;
-  startDate?: string;
-  endDate?: string;
+  fromDate?: string;
+  toDate?: string;
   onAddDates: () => void;
   onEdit: () => void;
 }
 
 export const ValiditySection: React.FC<ValiditySectionProps> = ({
   title,
-  startDate,
-  endDate,
+  fromDate,
+  toDate,
   onAddDates,
   onEdit,
 }) => {
@@ -22,11 +22,11 @@ export const ValiditySection: React.FC<ValiditySectionProps> = ({
 
   // Calculate progress and status
   const calculateProgress = () => {
-    if (!startDate || !endDate) return null;
+    if (!fromDate || !toDate) return null;
 
     const now = new Date();
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(fromDate);
+    const end = new Date(toDate);
 
     const totalDuration = end.getTime() - start.getTime();
     const elapsed = now.getTime() - start.getTime();
@@ -116,7 +116,7 @@ export const ValiditySection: React.FC<ValiditySectionProps> = ({
         <h4 className="text-sm font-medium text-foreground">{title}</h4>
         
         <div className="flex items-center gap-2">
-          {startDate && endDate && (
+          {fromDate && toDate && (
             <button
               onClick={onEdit}
               className="h-7 w-7 rounded-xl bg-secondary flex items-center justify-center hover:bg-accent transition-colors"
@@ -134,17 +134,17 @@ export const ValiditySection: React.FC<ValiditySectionProps> = ({
         </div>
       </div>
 
-      {startDate && endDate ? (
+      {fromDate && toDate ? (
         <>
           {/* Date Range */}
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
               <p className="text-muted-foreground mb-1">{t('from')}</p>
-              <p className="text-foreground font-medium">{formatDate(startDate, language)}</p>
+              <p className="text-foreground font-medium">{formatDate(fromDate, language)}</p>
             </div>
             <div>
               <p className="text-muted-foreground mb-1">{t('to')}</p>
-              <p className="text-foreground font-medium">{formatDate(endDate, language)}</p>
+              <p className="text-foreground font-medium">{formatDate(toDate, language)}</p>
             </div>
           </div>
 

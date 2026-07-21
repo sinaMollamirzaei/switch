@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {useApp, Car} from '../context/AppContext';
+import {useApp} from '../context/AppContext';
 import {Button} from './ui/button';
 import {Input} from './ui/input';
 import {Label} from './ui/label';
@@ -9,20 +9,33 @@ import {ValiditySection} from './ValiditySection';
 import {Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle} from './ui/sheet';
 import {toast} from 'sonner';
 import {Pencil, Trash2, Plus} from 'lucide-react';
+import {Car} from "../../lib/services";
 
 export const CarManagement: React.FC = () => {
     console.log('CarManagement rendered');
-    const {t, cars, carsLoading, addCar, updateCar, deleteCar, services, language} = useApp();
+    const {
+        t,
+        cars,
+        carsLoading,
+        addCar,
+        updateCar,
+        deleteCar,
+        insuranceHistories,
+        addInsuranceHistory,
+        inspectionHistories,
+        addInspectionHistory,
+        language
+    } = useApp();
     const [isAdding, setIsAdding] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [editingDatesFor, setEditingDatesFor] = useState<{
         carId: string;
-        type: 'insurance' | 'technicalInspection'
+        type: 'insurance' | 'inspection'
     } | null>(null);
-    const [dateFormData, setDateFormData] = useState<{ startDate: string; endDate: string }>({
-        startDate: '',
-        endDate: ''
+    const [dateFormData, setDateFormData] = useState<{ fromDate: string; toDate: string }>({
+        fromDate: '',
+        toDate: ''
     });
     const [formData, setFormData] = useState<Omit<Car, 'id'>>({
         userId: "",
@@ -91,19 +104,19 @@ export const CarManagement: React.FC = () => {
         setEditingId(null);
     };
 
-    const handleOpenDateEditor = (carId: string, type: 'insurance' | 'technicalInspection') => {
+    const handleOpenDateEditor = (carId: string, type: 'insurance' | 'inspection') => {
         const car = cars.find(c => c.id === carId);
         if (!car) return;
 
         if (type === 'insurance') {
             setDateFormData({
-                startDate: car.insuranceStartDate || '',
-                endDate: car.insuranceEndDate || '',
+                fromDate: car.insuranceFromDate || '',
+                toDate: car.insuranceToDate || '',
             });
         } else {
             setDateFormData({
-                startDate: car.technicalInspectionStartDate || '',
-                endDate: car.technicalInspectionEndDate || '',
+                fromDate: car.technicalInspectionFromDate || '',
+                toDate: car.technicalInspectionToDate || '',
             });
         }
 
@@ -115,7 +128,7 @@ export const CarManagement: React.FC = () => {
 
         const {carId, type} = editingDatesFor;
 
-        if (!dateFormData.startDate || !dateFormData.endDate) {
+        if (!dateFormData.fromDate || !dateFormData.toDate) {
             toast.error(t('pleaseFillAllFields') || 'Please fill in all fields');
             return;
         }
@@ -123,19 +136,21 @@ export const CarManagement: React.FC = () => {
         setSaving(true);
         try {
             if (type === 'insurance') {
-                await updateCar(carId, {
-                    insuranceStartDate: dateFormData.startDate,
-                    insuranceEndDate: dateFormData.endDate,
+                await addInsuranceHistory({
+                    fromDate: dateFormData.fromDate,
+                    toDate: dateFormData.toDate,
+                    carId: carId
                 });
             } else {
-                await updateCar(carId, {
-                    technicalInspectionStartDate: dateFormData.startDate,
-                    technicalInspectionEndDate: dateFormData.endDate,
+                await addInspectionHistory({
+                    fromDate: dateFormData.fromDate,
+                    toDate: dateFormData.toDate,
+                    carId: carId
                 });
             }
             toast.success(t('savedSuccessfully') || 'Saved successfully!');
             setEditingDatesFor(null);
-            setDateFormData({startDate: '', endDate: ''});
+            setDateFormData({fromDate: '', toDate: ''});
         } catch {
             toast.error('Failed to save. Please try again.');
         } finally {
@@ -184,8 +199,8 @@ export const CarManagement: React.FC = () => {
                             <div>
                                 <Label htmlFor="licensePlate">{t('licensePlate')}</Label>
                                 <LicensePlateInput
-                                    value={formData.licensePlate}
-                                    onChange={(value) => setFormData({...formData, licensePlate: value})}
+                                    value={formData.plate}
+                                    onChange={(value) => setFormData({...formData, plate: value})}
                                     className="mt-2"
                                 />
                             </div>
@@ -216,55 +231,46 @@ export const CarManagement: React.FC = () => {
                         </div>
                     ) : cars.length > 0 ? (
                         <div className="space-y-4">
-                            {cars.map(car => (
-                                <div
-                                    key={car.id}
-                                    className="rounded-xl bg-card border border-border/70 p-4 space-y-4"
-                                >
-                                    {/* Vehicle Main Info */}
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <h4 className="font-medium text-card-foreground">{car.name}</h4>
-                                            <p className="text-sm text-muted-foreground mt-0.5">{car.plate}</p>
-                                        </div>
+                            {cars.map(car => {
+                                const insurance = insuranceHistories
+                                    .filter(history => history.carId === car.id)
+                                    .sort((a, b) => b.toDate.localeCompare(a.toDate))[0];
 
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleEdit(car)}
-                                                className="h-9 w-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-accent transition-colors"
-                                                disabled={editingId !== null || isAdding}
-                                            >
-                                                <Pencil className="h-4 w-4 text-foreground"/>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(car.id)}
-                                                className="h-9 w-9 rounded-xl bg-secondary flex items-center justify-center hover:bg-destructive/10 transition-colors"
-                                                disabled={editingId !== null || isAdding}
-                                            >
-                                                <Trash2 className="h-4 w-4 text-destructive"/>
-                                            </button>
-                                        </div>
+                                const inspection = inspectionHistories
+                                    .filter(history => history.carId === car.id)
+                                    .sort((a, b) => b.toDate.localeCompare(a.toDate))[0];
+
+                                return (
+                                    <div key={car.id}>
+                                        <h4>{car.name}</h4>
+                                        <p>{car.plate}</p>
+
+                                        <ValiditySection
+                                            title={t('insurance')}
+                                            fromDate={insurance?.fromDate}
+                                            toDate={insurance?.toDate}
+                                            onAddDates={() =>
+                                                handleOpenDateEditor(car.id, 'insurance')
+                                            }
+                                            onEdit={() =>
+                                                handleOpenDateEditor(car.id, 'insurance')
+                                            }
+                                        />
+
+                                        <ValiditySection
+                                            title={t('inspection')}
+                                            fromDate={inspection?.fromDate}
+                                            toDate={inspection?.toDate}
+                                            onAddDates={() =>
+                                                handleOpenDateEditor(car.id, 'inspection')
+                                            }
+                                            onEdit={() =>
+                                                handleOpenDateEditor(car.id, 'inspection')
+                                            }
+                                        />
                                     </div>
-
-                                    {/* Insurance Section */}
-                                    <ValiditySection
-                                        title={t('insurance')}
-                                        startDate={car.insuranceStartDate}
-                                        endDate={car.insuranceEndDate}
-                                        onAddDates={() => handleOpenDateEditor(car.id, 'insurance')}
-                                        onEdit={() => handleOpenDateEditor(car.id, 'insurance')}
-                                    />
-
-                                    {/* Technical Inspection Section */}
-                                    <ValiditySection
-                                        title={t('technicalInspection')}
-                                        startDate={car.technicalInspectionStartDate}
-                                        endDate={car.technicalInspectionEndDate}
-                                        onAddDates={() => handleOpenDateEditor(car.id, 'technicalInspection')}
-                                        onEdit={() => handleOpenDateEditor(car.id, 'technicalInspection')}
-                                    />
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <div className="text-center py-12 text-muted-foreground">
@@ -291,8 +297,8 @@ export const CarManagement: React.FC = () => {
                         <div className="flex gap-4 w-[330px]">
                             <Label>{t('from')}</Label>
                             <DatePickerInput
-                                value={dateFormData.startDate}
-                                onChange={(value) => setDateFormData({...dateFormData, startDate: value})}
+                                value={dateFormData.fromDate}
+                                onChange={(value) => setDateFormData({...dateFormData, fromDate: value})}
                                 language={language}
                                 className="mt-2"
                             />
@@ -301,8 +307,8 @@ export const CarManagement: React.FC = () => {
                         <div className="flex gap-4 ">
                             <Label>{t('to')}</Label>
                             <DatePickerInput
-                                value={dateFormData.endDate}
-                                onChange={(value) => setDateFormData({...dateFormData, endDate: value})}
+                                value={dateFormData.toDate}
+                                onChange={(value) => setDateFormData({...dateFormData, toDate: value})}
                                 language={language}
                                 className="mt-2"
                             />

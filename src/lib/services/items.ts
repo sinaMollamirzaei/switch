@@ -4,29 +4,23 @@ import { supabase } from '../supabase';
 export interface Item {
   id: string;
   name: string;
-  nameFa: string | null;
   parentId: string | null;
   userId: string | null;
-  sortOrder: number;
 }
 
 type ItemRow = {
   id: string;
   name: string;
-  name_fa: string | null;
   parent_id: string | null;
   user_id: string | null;
-  sort_order: number;
 };
 
 function rowToItem(row: ItemRow): Item {
   return {
     id: row.id,
     name: row.name,
-    nameFa: row.name_fa,
     parentId: row.parent_id,
     userId: row.user_id,
-    sortOrder: row.sort_order,
   };
 }
 
@@ -35,7 +29,7 @@ export const itemsService = {
   async list(): Promise<Item[]> {
     const { data, error } = await supabase
       .from('items')
-      .select('id, name, name_fa, parent_id, user_id, sort_order')
+      .select('id, name, parent_id, user_id')
       .order('sort_order', { ascending: true });
 
     if (error) {
@@ -49,9 +43,8 @@ export const itemsService = {
   async listRoots(): Promise<Item[]> {
     const { data, error } = await supabase
       .from('items')
-      .select('id, name, name_fa, parent_id, user_id, sort_order')
-      .is('parent_id', null)
-      .order('sort_order', { ascending: true });
+      .select('id, name, parent_id, user_id')
+      .is('parent_id', null);
 
     if (error) {
       console.error('[items.listRoots] error:', error.message, '| code:', error.code);
@@ -64,9 +57,8 @@ export const itemsService = {
   async listChildren(parentId: string): Promise<Item[]> {
     const { data, error } = await supabase
       .from('items')
-      .select('id, name, name_fa, parent_id, user_id, sort_order')
+      .select('id, name, parent_id, user_id')
       .eq('parent_id', parentId)
-      .order('sort_order', { ascending: true });
 
     if (error) {
       console.error('[items.listChildren] error:', error.message, '| code:', error.code);
@@ -76,7 +68,7 @@ export const itemsService = {
   },
 
   /** Create a custom user-owned item. */
-  async create(item: Pick<Item, 'name' | 'nameFa' | 'parentId'>): Promise<Item> {
+  async create(item: Pick<Item, 'name' | 'parentId'>): Promise<Item> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated: cannot create item');
 
@@ -84,11 +76,10 @@ export const itemsService = {
       .from('items')
       .insert({
         name: item.name,
-        name_fa: item.nameFa,
         parent_id: item.parentId,
         user_id: user.id,
       })
-      .select('id, name, name_fa, parent_id, user_id, sort_order')
+      .select('id, name, parent_id, user_id')
       .single();
 
     if (error) {

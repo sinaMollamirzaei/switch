@@ -3,6 +3,7 @@ export type {Car} from './cars';
 export {servicesService} from './services';
 export type {Service} from './services';
 export {remindersService} from './reminders';
+export type {Reminder} from './reminders';
 export {usersService} from './users';
 export {itemsService} from './items';
 export type {Item} from './items';
