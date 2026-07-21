@@ -23,46 +23,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Dev-only bypass: lets the preview work without an OAuth redirect.
   const [previewMode, setPreviewMode] = useState(false);
 
-  useEffect(() => {
-    // 1. Restore existing session on mount.
-    //    After an OAuth redirect the session lives in the URL hash — Supabase
-    //    picks it up automatically and getSession() returns it.
-    supabase.auth.getSession().then(({ data: { session: s }, error }) => {
-      if (error) console.error('[Auth] getSession error:', error.message);
-      setSession(s);
-        console.log('session is' , s);
-        console.log('user is' , s.user);
+    useEffect(() => {
+        let mounted = true;
 
-      setLoading(false);
-      // Sync profile on page-reload if a session is already present.
-      // onAuthStateChange fires INITIAL_SESSION (not SIGNED_IN) on reload,
-      // so we handle the profile sync here explicitly.
-      if (s?.user) {
-        usersService.syncProfile(s.user);
-      }
-    });
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange(
+            async (event, session) => {
+                console.log('[Auth] event:', event);
+                console.log('[Auth] session:', session);
+                console.log('[Auth] user:', session?.user);
 
-    // 2. Subscribe to real-time auth state changes.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-      console.log('[Auth] event:', event);
-      setSession(s);
-      // SIGNED_IN fires on the first OAuth callback after the Google redirect.
-        console.log('session is' , s);
-        console.log('user is' , s.user);
-        console.log('event is' , event);
-        if (event === 'SIGNED_IN' && s?.user) {
-        usersService.syncProfile(s.user);
-      }
-    });
+                if (!mounted) return;
 
-    // 3. Hide splash after 2.5 s.
-    const timer = setTimeout(() => setShowSplash(false), 2500);
+                setSession(session);
 
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
-    };
-  }, []);
+                if (event === 'SIGNED_IN' && session?.user) {
+                    await usersService.syncProfile(session.user);
+                }
+
+                if (event === 'INITIAL_SESSION') {
+                    setLoading(false);
+                }
+            }
+        );
+
+        const timer = setTimeout(() => {
+            if (mounted) {
+                setShowSplash(false);
+            }
+        }, 2500);
+
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+            clearTimeout(timer);
+        };
+    }, []);
 
   const login = async (): Promise<void> => {
     const { error } = await supabase.auth.signInWithOAuth({
