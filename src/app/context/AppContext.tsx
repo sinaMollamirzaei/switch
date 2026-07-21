@@ -370,27 +370,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({children})
         await loadHistories(carIdsRef.current);
     };
 
-    // ── i18n ──────────────────────────────────────────────────────────────────────
 
-    const t = (key: string): string =>
-        translations[language][key as keyof typeof translations['en']] || key;
-
-    return (
-        <AppContext.Provider
-            value={{
-                language, setLanguage,
-                theme, setTheme,
-                cars, carsLoading, addCar, updateCar, deleteCar,
-                services, servicesLoading, addService, updateService, deleteService,
-                reminders, addReminder, deleteReminder,
-                inspectionHistories, addInspectionHistory, updateInspectionHistory, deleteInspectionHistory,
-                insuranceHistories, addInsuranceHistory, updateInsuranceHistory, deleteInsuranceHistory,
-                t,
-            }}
-        >
-            {children}
-        </AppContext.Provider>
-    );
 };
 
 export const useApp = () => {

@@ -176,7 +176,7 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <ThemeProvider>
+    <ThemeProvider children={undefined}>
       <AuthProvider>
         <AppProvider>
           <AppContent />
