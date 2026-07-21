@@ -1,42 +1,25 @@
 import { supabase } from '../supabase';
 
-// public.inspection_histories columns (after migration):
-// id, car_id, start_date, end_date, status, notes, center, cost, created_at, updated_at
 export interface InspectionHistory {
   id: string;
   carId: string;
-  startDate: string | null;
-  endDate: string | null;
-  status: 'active' | 'expired' | 'pending' | null;
-  notes: string | null;
-  center: string | null;
-  cost: number | null;
-  createdAt: string;
+  fromDate: string | null;
+  toDate: string | null;
 }
 
 type InspectionRow = {
   id: string;
   car_id: string;
-  start_date: string | null;
-  end_date: string | null;
-  status: string | null;
-  notes: string | null;
-  center: string | null;
-  cost: number | null;
-  created_at: string;
+  from_date: string | null;
+  to_date: string | null;
 };
 
 function rowToInspection(row: InspectionRow): InspectionHistory {
   return {
     id: row.id,
     carId: row.car_id,
-    startDate: row.start_date,
-    endDate: row.end_date,
-    status: row.status as InspectionHistory['status'],
-    notes: row.notes,
-    center: row.center,
-    cost: row.cost,
-    createdAt: row.created_at,
+    fromDate: row.from_date,
+    toDate: row.to_date
   };
 }
 
@@ -44,7 +27,7 @@ export const inspectionHistoriesService = {
   async listByCar(carId: string): Promise<InspectionHistory[]> {
     const { data, error } = await supabase
       .from('inspection_histories')
-      .select('id, car_id, start_date, end_date, status, notes, center, cost, created_at')
+      .select('id, car_id, from_date, to_date, created_at')
       .eq('car_id', carId)
       .order('created_at', { ascending: false });
 
@@ -58,12 +41,8 @@ export const inspectionHistoriesService = {
   async create(record: Omit<InspectionHistory, 'id' | 'createdAt'>): Promise<void> {
     const { error } = await supabase.from('inspection_histories').insert({
       car_id: record.carId,
-      start_date: record.startDate,
-      end_date: record.endDate,
-      status: record.status,
-      notes: record.notes,
-      center: record.center,
-      cost: record.cost,
+      from_date: record.fromDate,
+      to_date: record.toDate,
     });
     if (error) {
       console.error('[inspectionHistories.create] error:', error.message, '| code:', error.code);
@@ -73,12 +52,8 @@ export const inspectionHistoriesService = {
 
   async update(id: string, record: Partial<Omit<InspectionHistory, 'id' | 'carId' | 'createdAt'>>): Promise<void> {
     const payload: Record<string, unknown> = {};
-    if (record.startDate !== undefined) payload.start_date = record.startDate;
-    if (record.endDate !== undefined) payload.end_date = record.endDate;
-    if (record.status !== undefined) payload.status = record.status;
-    if (record.notes !== undefined) payload.notes = record.notes;
-    if (record.center !== undefined) payload.center = record.center;
-    if (record.cost !== undefined) payload.cost = record.cost;
+    if (record.fromDate !== undefined) payload.start_date = record.fromDate;
+    if (record.toDate !== undefined) payload.end_date = record.toDate;
 
     if (Object.keys(payload).length === 0) return;
     const { error } = await supabase.from('inspection_histories').update(payload).eq('id', id);

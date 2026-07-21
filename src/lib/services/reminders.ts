@@ -1,40 +1,28 @@
 import { supabase } from '../supabase';
-import { typeToCategory, categoryToType } from './categories';
-import type { Reminder } from './types';
 
-// public.reminders columns: id, car_id, category_id, description, created_at
-// The reminder schedule (type/value/note) is encoded as JSON in `description`.
+export interface Reminder {
+    id: string;
+    carId: string;
+    itemId: string;
+    targetDate: string;
+    targetKilometer: number;
+    description?: string;
+}
+
 type ReminderRow = {
   id: string;
   car_id: string;
-  category_id: string;
+  item_id: string;
+  target_date: string;
+  target_kilometer: number;
   description: string | null;
 };
 
-interface ReminderMeta {
-  reminderType?: 'date' | 'mileage';
-  reminderValue?: string | number;
-  reminderNote?: string;
-}
-
-function parseMeta(description: string | null): ReminderMeta {
-  if (!description) return {};
-  try {
-    return (JSON.parse(description) as ReminderMeta) ?? {};
-  } catch {
-    return {};
-  }
-}
 
 function rowToReminder(row: ReminderRow): Reminder {
-  const meta = parseMeta(row.description);
   return {
     id: row.id,
     carId: row.car_id,
-    type: categoryToType(row.category_id),
-    reminderType: meta.reminderType ?? 'date',
-    reminderValue: meta.reminderValue ?? '',
-    reminderNote: meta.reminderNote,
   };
 }
 
@@ -55,15 +43,10 @@ export const remindersService = {
   },
 
   async create(reminder: Omit<Reminder, 'id'>): Promise<void> {
-    const meta: ReminderMeta = {
-      reminderType: reminder.reminderType,
-      reminderValue: reminder.reminderValue,
-      reminderNote: reminder.reminderNote,
-    };
     const { error } = await supabase.from('reminders').insert({
       car_id: reminder.carId,
-      category_id: typeToCategory(reminder.type),
-      description: JSON.stringify(meta),
+      item_id: reminder.itemId,
+      description: reminder.description,
     });
     if (error) {
       console.error('[reminders.create] error:', error.message, '| code:', error.code, '| details:', error.details);

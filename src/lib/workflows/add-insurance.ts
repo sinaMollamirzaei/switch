@@ -1,65 +1,30 @@
-/**
- * Workflow: Add / Renew Insurance
- *
- * Scenario: User records a new insurance policy for an existing car.
- * The previous policy (if any) is automatically expired so there is
- * always at most one active policy per car.
- *
- * Steps:
- *  1. Expire the previous active policy (status → 'expired')
- *  2. Insert the new policy with status 'active'
- *  3. Return the new record id
- */
-
-import { supabase } from '../supabase';
-import { insuranceHistoriesService } from '../services/insurance-histories';
-import type { InsuranceHistory } from '../services/insurance-histories';
+import {supabase} from '../supabase';
+import {insuranceHistoriesService} from '../services';
+import type {InsuranceHistory} from '../services';
 
 export interface AddInsuranceInput {
-  carId: string;
-  startDate: string;
-  endDate: string;
+    carId: string;
+    fromDate: string;
+    toDate: string;
 }
 
-export interface AddInsuranceResult {
-  insuranceId: string;
-  previouslyExpired: boolean;
-}
+export async function addInsuranceWorkflow(input: AddInsuranceInput): Promise<string> {
+    let previouslyExpired = false;
 
-export async function addInsuranceWorkflow(input: AddInsuranceInput): Promise<AddInsuranceResult> {
-  let previouslyExpired = false;
+    //TODO : check that current car has active insurance
 
-  // Step 1: Find and expire any currently active policy for this car
-  const { data: active } = await supabase
-    .from('insurance_histories')
-    .select('id')
-    .eq('car_id', input.carId)
-  
+    await insuranceHistoriesService.create({
+        carId: input.carId,
+        fromDate: input.fromDate,
+        toDate: input.toDate,
+    });
 
-  if (active && active.length > 0) {
-    for (const row of active) {
-      try {
-        await insuranceHistoriesService.update(row.id, { status: 'expired' });
-        previouslyExpired = true;
-      } catch (err) {
-        console.error('[addInsuranceWorkflow] Failed to expire old policy:', err);
-      }
-    }
-  }
+    // Step 3: Return the new record id by fetching the latest for this car
+    const records = await insuranceHistoriesService.listByCar(input.carId);
+    const newest = records[0]; // listByCar orders by created_at DESC
+    if (!newest) throw new Error('[addInsuranceWorkflow] Could not locate newly created insurance record');
 
-  // Step 2: Insert the new policy
-  await insuranceHistoriesService.create({
-    carId: input.carId,
-    fromDate: input.startDate,
-    toDate: input.endDate,
-  });
-
-  // Step 3: Return the new record id by fetching the latest for this car
-  const records = await insuranceHistoriesService.listByCar(input.carId);
-  const newest = records[0]; // listByCar orders by created_at DESC
-  if (!newest) throw new Error('[addInsuranceWorkflow] Could not locate newly created insurance record');
-
-  return { insuranceId: newest.id, previouslyExpired };
+    return newest.id;
 }
 
 /**
@@ -67,11 +32,10 @@ export async function addInsuranceWorkflow(input: AddInsuranceInput): Promise<Ad
  * Returns 'active', 'expiring-soon' (within 30 days), or 'expired'.
  */
 export function insuranceDisplayStatus(record: InsuranceHistory): 'active' | 'expiring-soon' | 'expired' {
-  if (!record.endDate || record.status === 'expired') return 'expired';
-  const end = new Date(record.endDate);
-  const today = new Date();
-  const daysLeft = Math.floor((end.getTime() - today.getTime()) / 86_400_000);
-  if (daysLeft < 0) return 'expired';
-  if (daysLeft <= 30) return 'expiring-soon';
-  return 'active';
+    const end = new Date(record.toDate);
+    const today = new Date();
+    const daysLeft = Math.floor((end.getTime() - today.getTime()) / 86_400_000);
+    if (daysLeft < 0) return 'expired';
+    if (daysLeft <= 30) return 'expiring-soon';
+    return 'active';
 }

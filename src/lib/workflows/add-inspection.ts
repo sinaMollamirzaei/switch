@@ -54,8 +54,8 @@ export async function addInspectionWorkflow(input: AddInspectionInput): Promise<
   // Step 2: Insert the new inspection record
   await inspectionHistoriesService.create({
     carId: input.carId,
-    startDate: input.startDate,
-    endDate: input.endDate,
+    fromDate: input.startDate,
+    toDate: input.endDate,
     status: 'active',
     center: input.center ?? null,
     cost: input.cost ?? null,
@@ -75,8 +75,8 @@ export async function addInspectionWorkflow(input: AddInspectionInput): Promise<
  * Returns 'active', 'expiring-soon' (within 30 days), or 'expired'.
  */
 export function inspectionDisplayStatus(record: InspectionHistory): 'active' | 'expiring-soon' | 'expired' {
-  if (!record.endDate || record.status === 'expired') return 'expired';
-  const end = new Date(record.endDate);
+  if (!record.toDate || record.status === 'expired') return 'expired';
+  const end = new Date(record.toDate);
   const today = new Date();
   const daysLeft = Math.floor((end.getTime() - today.getTime()) / 86_400_000);
   if (daysLeft < 0) return 'expired';

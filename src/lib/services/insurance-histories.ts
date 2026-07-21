@@ -1,7 +1,5 @@
 import { supabase } from '../supabase';
 
-// public.insurance_histories columns (after migration):
-// id, car_id, start_date, end_date, status, notes, provider, policy_number, cost, created_at, updated_at
 export interface InsuranceHistory {
   id: string;
   carId: string;
@@ -46,7 +44,7 @@ export const insuranceHistoriesService = {
     return (data ?? []).map((r) => rowToInsurance(r as InsuranceRow));
   },
 
-  async create(record: Omit<InsuranceHistory, 'id' | 'createdAt'>): Promise<void> {
+  async create(record: Omit<InsuranceHistory, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
     const { error } = await supabase.from('insurance_histories').insert({
       car_id: record.carId,
       from_date: record.fromDate,

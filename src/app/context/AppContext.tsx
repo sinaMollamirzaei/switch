@@ -15,10 +15,6 @@ import {
 import { useAuth } from './AuthContext';
 import { addInsuranceWorkflow, addInspectionWorkflow } from '../../lib/workflows';
 
-// Re-export domain types so existing component imports keep working.
-export type { Car, Service, Reminder } from '../../lib/services';
-export type { InspectionHistory, InsuranceHistory } from '../../lib/services';
-
 export type Language = 'en' | 'fa';
 export type Theme = 'light' | 'dark';
 
@@ -295,38 +291,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isPreviewMode) {
       setCars((prev) => prev.map((c) => (c.id === id ? { ...c, ...changes } : c)));
       return;
-    }
-
-    const hasInsuranceDates =
-      changes.insuranceStartDate !== undefined || changes.insuranceEndDate !== undefined;
-      console.log("booloot has insurance date", hasInsuranceDates)
-    const hasInspectionDates =
-      changes.technicalInspectionStartDate !== undefined || changes.technicalInspectionEndDate !== undefined;
-
-    if (hasInsuranceDates) {
-      const current = cars.find((c) => c.id === id);
-      const startDate = changes.insuranceStartDate ?? current?.insuranceStartDate ?? '';
-      console.log("booloot start date", startDate)
-      const endDate = changes.insuranceEndDate ?? current?.insuranceEndDate ?? '';
-      console.log("booloot end date", endDate)
-      await addInsuranceWorkflow({ carId: id, startDate: startDate || '', endDate: endDate || '' });
-    }
-
-    if (hasInspectionDates) {
-      const current = cars.find((c) => c.id === id);
-      const startDate = changes.technicalInspectionStartDate ?? current?.technicalInspectionStartDate ?? '';
-      const endDate = changes.technicalInspectionEndDate ?? current?.technicalInspectionEndDate ?? '';
-      await addInspectionWorkflow({ carId: id, startDate: startDate || '', endDate: endDate || '' });
-    }
-
-    if (hasInsuranceDates || hasInspectionDates) {
-      // Reload histories so the merged dates on car state are re-derived from DB.
-      await loadHistories(carIdsRef.current);
-      // If there are no other car-metadata changes, return early.
-      const metadataKeys = Object.keys(changes).filter(
-        (k) => !['insuranceStartDate', 'insuranceEndDate', 'technicalInspectionStartDate', 'technicalInspectionEndDate'].includes(k)
-      );
-      if (metadataKeys.length === 0) return;
     }
 
     const wrote = await carsService.update(id, changes);

@@ -5,18 +5,12 @@ export interface ServiceItem {
   id: string;
   serviceId: string;
   itemId: string;
-  quantity: number;
-  cost: number | null;
-  notes: string | null;
 }
 
 type ServiceItemRow = {
   id: string;
   service_id: string;
   item_id: string;
-  quantity: number;
-  cost: number | null;
-  notes: string | null;
 };
 
 function rowToServiceItem(row: ServiceItemRow): ServiceItem {
@@ -24,9 +18,6 @@ function rowToServiceItem(row: ServiceItemRow): ServiceItem {
     id: row.id,
     serviceId: row.service_id,
     itemId: row.item_id,
-    quantity: row.quantity,
-    cost: row.cost,
-    notes: row.notes,
   };
 }
 
@@ -35,9 +26,8 @@ export const serviceItemsService = {
   async listByService(serviceId: string): Promise<ServiceItem[]> {
     const { data, error } = await supabase
       .from('service_items')
-      .select('id, service_id, item_id, quantity, cost, notes')
-      .eq('service_id', serviceId)
-      .order('created_at', { ascending: true });
+      .select('id, service_id, item_id')
+      .eq('service_id', serviceId);
 
     if (error) {
       console.error('[serviceItems.listByService] error:', error.message, '| code:', error.code);
@@ -51,9 +41,8 @@ export const serviceItemsService = {
     if (serviceIds.length === 0) return [];
     const { data, error } = await supabase
       .from('service_items')
-      .select('id, service_id, item_id, quantity, cost, notes')
-      .in('service_id', serviceIds)
-      .order('created_at', { ascending: true });
+      .select('id, service_id, item_id')
+      .in('service_id', serviceIds);
 
     if (error) {
       console.error('[serviceItems.listByServices] error:', error.message, '| code:', error.code);
@@ -68,12 +57,9 @@ export const serviceItemsService = {
       .from('service_items')
       .insert({
         service_id: item.serviceId,
-        item_id: item.itemId,
-        quantity: item.quantity,
-        cost: item.cost,
-        notes: item.notes,
+        item_id: item.itemId
       })
-      .select('id, service_id, item_id, quantity, cost, notes')
+      .select('id, service_id, item_id')
       .single();
 
     if (error) {
@@ -101,10 +87,7 @@ export const serviceItemsService = {
 
     const rows = items.map((item) => ({
       service_id: serviceId,
-      item_id: item.itemId,
-      quantity: item.quantity ?? 1,
-      cost: item.cost ?? null,
-      notes: item.notes ?? null,
+      item_id: item.itemId
     }));
 
     const { error: insErr } = await supabase.from('service_items').insert(rows);

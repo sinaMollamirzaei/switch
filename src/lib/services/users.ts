@@ -1,8 +1,13 @@
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../supabase';
-import type { UserProfile } from './types';
 
-// public.users columns include: id, email, full_name, phone
+export interface UserProfile {
+    id: string;
+    email: string | null;
+    full_name: string | null;
+    phone: string | null;
+}
+
 export const usersService = {
   /**
    * Upsert the authenticated user's profile row into public.users.
