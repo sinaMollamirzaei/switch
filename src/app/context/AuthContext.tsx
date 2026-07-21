@@ -45,6 +45,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(s);
       // SIGNED_IN fires on the first OAuth callback after the Google redirect.
       if (event === 'SIGNED_IN' && s?.user) {
+          console.log('now what??' , event);
+          console.log('now what2??' , s.user);
         usersService.syncProfile(s.user);
       }
     });
