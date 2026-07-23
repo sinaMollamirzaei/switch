@@ -62,9 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
   const login = async (): Promise<void> => {
+      console.log('[Auth] login:');
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://switchapp-production.up.railway.app' },
+      options: { redirectTo: 'https://switch-production-3c68.up.railway.app/' },
     });
     if (error) console.error('[Auth] signInWithOAuth error:', error.message);
   };
